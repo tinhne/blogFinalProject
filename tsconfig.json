@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "module": "CommonJS",
+    "types": ["node"],
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -15,12 +16,8 @@
     "incremental": true,
     "paths": {
       "@app": ["src"],
-      "@app/*": ["src/*"],
-      "@test/*": ["test/*"]
-    }, 
-    // "include": [
-    // "src/**/*.ts",
-    // "src/types.d.ts"
-    // ]
-  }
+      "@app/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "types"]
 }

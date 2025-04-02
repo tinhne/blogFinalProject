@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,107 +11,147 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(uuid())
-  email        String     @unique
-  name         String?
-  passwordHash String
-  avatarUrl    String?
-  refreshToken String?
-  tokenVersion Int        @default(0) // Dùng để vô hiệu hóa token cũ
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  posts        Post[]
-  comments     Comment[]
-  userRoles    UserRole[]
+  id          String    @id @default(cuid())
+  email       String    @unique
+  password    String
+  firstName   String
+  lastName    String
+  avatarUrl      String?
+  dateOfBirth DateTime?
+  gender      Gender    @default(UNSPECIFIED)
+  address     String?
+  isVerified  Boolean   @default(false)
+  isAdmin     Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  posts          Post[]
+  comments       Comment[]
+  verifications  EmailVerification[]
+  passwordResets PasswordReset[]
+  refreshTokens  RefreshToken[]
 }
 
-model Role {
-  id          String           @id @default(uuid())
-  name        String           @unique
-  description String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  userRoles   UserRole[]
-  permissions RolePermission[]
+enum Gender {
+  MALE
+  FEMALE
+  UNSPECIFIED
 }
 
-model UserRole {
-  id        String   @id @default(uuid())
+model RefreshToken {
+  id         String   @id @default(cuid())
+  userId     String
+  token      String   @unique
+  userAgent  String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  // Quan hệ với User
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Email verification model
+model EmailVerification {
+  id        String   @id @default(cuid())
   userId    String
-  roleId    String
+  token     String   @unique
+  expiresAt DateTime
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, roleId])
-  @@index([userId])
-  @@index([roleId])
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Permission {
-  id              String           @id @default(uuid())
-  name            String           @unique
-  description     String?
-  resource        String           // posts, comments, users, categories
-  action          String           // create, read, update, delete, manage
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  rolePermissions RolePermission[]
+// Password reset model
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model RolePermission {
-  id           String     @id @default(uuid())
-  roleId       String
-  permissionId String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@unique([roleId, permissionId])
-  @@index([roleId])
-  @@index([permissionId])
-}
-
+// Category model
 model Category {
-  id          String   @id @default(uuid())
+  id          String   @id @default(cuid())
   name        String   @unique
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  posts       Post[]
+
+  // Relations
+  posts PostCategory[]
 }
 
+// Post model - handles blog posts
 model Post {
-  id         String    @id @default(uuid())
+  id         String         @id @default(cuid())
   title      String
-  content    String    @db.Text
-  isPublic   Boolean   @default(false)
+  content    String         @db.Text
+  status     PostStatus     @default(DRAFT)
+  visibility PostVisibility @default(PRIVATE)
   authorId   String
-  categoryId String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  author     User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  comments   Comment[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 
-  @@index([authorId])
-  @@index([categoryId])
-  @@index([title])
-  @@index([createdAt])
+  // Relations
+  author     User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments   Comment[]
+  categories PostCategory[]
+  images     PostImage[]
+
+  // Full-text search index
+  @@index([title, content])
 }
 
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum PostVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+// Junction table for Post and Category (many-to-many)
+model PostCategory {
+  postId     String
+  categoryId String
+  assignedAt DateTime @default(now())
+
+  // Relations
+  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([postId, categoryId])
+}
+
+// Post images model
+model PostImage {
+  id        String   @id @default(cuid())
+  postId    String
+  url       String
+  createdAt DateTime @default(now())
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+// Comment model
 model Comment {
-  id        String   @id @default(uuid())
-  content   String
+  id        String   @id @default(cuid())
+  content   String   @db.Text
   postId    String
   authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  @@index([postId])
-  @@index([authorId])
+  // Relations
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
