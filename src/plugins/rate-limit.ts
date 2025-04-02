@@ -1,7 +1,8 @@
-import { FastifyInstance } from 'fastify';
 import fastifyRateLimit from '@fastify/rate-limit';
+import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { env } from '@app/config/env';
+
+import { env } from './../config/env'; // Đường dẫn đến file config của bạn
 
 // Tách riêng config để dễ bảo trì
 export const autoConfig = () => ({
