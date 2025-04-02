@@ -1,10 +1,15 @@
 import { FastifyPluginCallback } from 'fastify';
-import { SwaggerPlugin } from './swagger';
+
 import { DatabasePlugin } from './database';
+import JwtPlugin from './jwt';
+import LoggerPlugin from './logger';
 import RateLimitPlugin from './rate-limit';
+import { SwaggerPlugin } from './swagger';
 
 export const Plugins: FastifyPluginCallback = async (app) => {
-  app.register(SwaggerPlugin);
-  app.register(DatabasePlugin);
-  app.register(RateLimitPlugin);
+  // await app.register(DatabasePlugin);
+  await app.register(LoggerPlugin);
+  // await app.register(SwaggerPlugin);
+  await app.register(RateLimitPlugin);
+  await app.register(JwtPlugin);
 };
