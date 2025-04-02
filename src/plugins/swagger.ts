@@ -5,6 +5,7 @@ import { FastifyInstance } from 'fastify';
 export async function SwaggerPlugin(fastify: FastifyInstance) {
   await fastify.register(swagger, {
     openapi: {
+      openapi: '3.0.0',
       info: {
         title: 'Personal Blog API',
         description: 'API documentation for the Personal Blog API',
@@ -25,16 +26,21 @@ export async function SwaggerPlugin(fastify: FastifyInstance) {
         },
       },
       security: [{ BearerAuth: [] }],
+      tags: [{ name: 'Auth', description: 'Authentication API' }],
     },
   });
 
   await fastify.register(swaggerUI, {
-    routePrefix: '/api/docs',
+    routePrefix: '/docs',
     uiConfig: {
-      docExpansion: 'none',
+      docExpansion: 'full',
       deepLinking: false,
     },
     staticCSP: true,
     transformStaticCSP: (header: string) => header,
+    transformSpecification: (swaggerObject, request, reply) => {
+      return swaggerObject;
+    }, // Cấu hình biến đổi tài liệu Swagger
+    transformSpecificationClone: true, // Sử dụng bản sao của tài liệu Swagger
   });
 }

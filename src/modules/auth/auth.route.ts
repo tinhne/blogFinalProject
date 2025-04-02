@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 
-import { messageResponseJsonSchema, userRegisterJsonSchema } from '../../schema';
+import { messageResponseJsonSchema, userRegisterJsonSchema, verifyEmailJsonSchema } from '../../schema';
 
 import { AuthController } from './auth.controller';
 
@@ -29,5 +29,35 @@ export default async function authRoute(fastify: FastifyInstance) {
       },
     },
     authControllerInstance.register
+  );
+
+  fastify.get(
+    '/verify-email',
+    {
+      schema: {
+        tags: ['Auth'],
+        description: 'Verify email',
+        querystring: {
+          type: 'object',
+          properties: {
+            token: { type: 'string' },
+          },
+          required: ['token'],
+        },
+        response: {
+          200: messageResponseJsonSchema,
+          400: {
+            type: 'object',
+            properties: {
+              statusCode: { type: 'number' },
+              error: { type: 'string' },
+              message: { type: 'string' },
+            },
+            required: ['statusCode', 'error', 'message'],
+          },
+        },
+      },
+    },
+    authControllerInstance.verifyEmail
   );
 }

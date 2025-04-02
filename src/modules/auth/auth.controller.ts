@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-import { UserRegisterInput } from '../../schema';
+import { UserRegisterInput, VerifyEmailInput } from '../../schema';
 import { sendVerificationEmail } from '../../utils/email';
 
 import { AuthService } from './auth.service';
@@ -15,6 +15,7 @@ export class AuthController {
     // Remove direct Prisma instantiation from here
     // Ensure the plugin is registered before this point
     this.register = this.register.bind(this);
+    this.verifyEmail = this.verifyEmail.bind(this);
   }
 
   async register(request: FastifyRequest<{ Body: UserRegisterInput }>, reply: FastifyReply) {
@@ -79,6 +80,43 @@ export class AuthController {
         error: 'Internal Server Error',
         message: 'An error occurred while registering the user',
       });
+    }
+  }
+
+  async verifyEmail(request: FastifyRequest<{ Querystring: { token: string } }>, reply: FastifyReply) {
+    const { token } = request.query;
+    console.log('[DEBUG] Received token:', token);
+
+    try {
+      const verificationRecord = await this.fastify.prisma.emailVerification.findUnique({
+        where: { token },
+        include: { user: true },
+      });
+
+      if (!verificationRecord) {
+        console.log('[DEBUG] Token not found or expired.');
+        return reply.status(400).send({ message: 'Invalid or expired verification token' });
+      }
+
+      if (verificationRecord.expiresAt < new Date()) {
+        console.log('[DEBUG] Token expired.');
+        await this.fastify.prisma.emailVerification.delete({ where: { id: verificationRecord.id } });
+        return reply.status(400).send({ message: 'Verification token has expired' });
+      }
+
+      console.log('[DEBUG] Marking user as verified.');
+      await this.fastify.prisma.user.update({
+        where: { id: verificationRecord.userId },
+        data: { isVerified: true },
+      });
+
+      console.log('[DEBUG] Deleting token record.');
+      await this.fastify.prisma.emailVerification.delete({ where: { id: verificationRecord.id } });
+
+      return reply.status(200).send({ message: 'Email verified successfully' });
+    } catch (error) {
+      console.error('[ERROR]', error);
+      return reply.status(500).send({ message: 'Internal Server Error' });
     }
   }
 }
