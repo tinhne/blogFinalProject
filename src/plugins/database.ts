@@ -7,7 +7,7 @@ export const DatabasePlugin = fp(async (app: FastifyInstance) => {
   await prisma.$connect(); // Kết nối database
   app.decorate('prisma', prisma);
 
-  app.addHook('onClose', async (instance) => {
+  app.addHook('onClose', async () => {
     await prisma.$disconnect();
   });
 });

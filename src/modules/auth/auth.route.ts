@@ -1,6 +1,11 @@
 import { FastifyInstance } from 'fastify';
 
-import { messageResponseJsonSchema, userRegisterJsonSchema, verifyEmailJsonSchema } from '../../schema';
+import {
+  loginResponseJsonSchema,
+  messageResponseJsonSchema,
+  userLoginJsonSchema,
+  userRegisterJsonSchema,
+} from '../../schema';
 
 import { AuthController } from './auth.controller';
 
@@ -27,6 +32,7 @@ export default async function authRoute(fastify: FastifyInstance) {
           },
         },
       },
+      // onRequest: [fastify.authenticate],
     },
     authControllerInstance.register
   );
@@ -59,5 +65,29 @@ export default async function authRoute(fastify: FastifyInstance) {
       },
     },
     authControllerInstance.verifyEmail
+  );
+
+  fastify.post(
+    '/login',
+    {
+      schema: {
+        tags: ['Auth'],
+        description: 'Login user',
+        body: userLoginJsonSchema,
+        response: {
+          201: loginResponseJsonSchema,
+          400: {
+            type: 'object',
+            properties: {
+              statusCode: { type: 'number' },
+              error: { type: 'string' },
+              message: { type: 'string' },
+            },
+            required: ['statusCode', 'error', 'message'],
+          },
+        },
+      },
+    },
+    authControllerInstance.login
   );
 }

@@ -15,7 +15,7 @@ export const env = {
   ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '2h',
   REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY || '7d',
 
-  SMTP_HOST: process.env.SMTP_HOST || 'smtp.example.com',
+  SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
   SMTP_PORT: process.env.SMTP_PORT || 587,
   SMTP_USER: process.env.SMTP_USER || 'levantrungtinh123@gmail.com',
   SMTP_PASS: process.env.SMTP_PASS || 'shibashiba',
