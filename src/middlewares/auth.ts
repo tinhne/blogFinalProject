@@ -2,11 +2,11 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 
 import { AuthUser } from '../../types/fastify'; // Import kiểu `AuthUser`
 
-// **Middleware xác thực người dùng**
+// Middleware xác thực người dùng
 export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
   try {
     await request.jwtVerify();
-    request.user = request.user as AuthUser; // ✅ Gán kiểu AuthUser để tránh lỗi TS
+    request.user = request.user as AuthUser; // Gán kiểu AuthUser để tránh lỗi TS
   } catch (err) {
     reply.status(401).send({
       statusCode: 401,
@@ -16,11 +16,11 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   }
 }
 
-// **Middleware xác thực Admin**
+// Middleware xác thực Admin
 export async function authenticateAdmin(request: FastifyRequest, reply: FastifyReply) {
   try {
     await request.jwtVerify();
-    request.user = request.user as AuthUser; // ✅ Ép kiểu lại để tránh lỗi TS
+    request.user = request.user as AuthUser; // Ép kiểu lại để tránh lỗi TS
 
     if (!(request.user as AuthUser).isAdmin) {
       return reply.status(403).send({
@@ -38,12 +38,12 @@ export async function authenticateAdmin(request: FastifyRequest, reply: FastifyR
   }
 }
 
-// **Middleware kiểm tra quyền sở hữu tài nguyên**
+// Middleware kiểm tra quyền sở hữu tài nguyên
 export function authenticateOwner(paramIdField = 'id') {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       await request.jwtVerify();
-      //   request.user = request.user as AuthUser; // ✅ Ép kiểu đúng
+      //   request.user = request.user as AuthUser; // Ép kiểu đúng
 
       const resourceId = request.params[paramIdField];
 
