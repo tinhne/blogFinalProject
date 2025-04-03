@@ -59,7 +59,6 @@ export const loginResponseSchema = z.object({
 });
 
 export const messageResponseSchema = z.object({
-  // verificationToken: z.string(),
   message: z.string(),
 });
 

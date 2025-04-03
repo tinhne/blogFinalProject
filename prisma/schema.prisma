@@ -16,21 +16,24 @@ model User {
   password    String
   firstName   String
   lastName    String
-  avatarUrl      String?
+  avatarUrl   String?
   dateOfBirth DateTime?
   gender      Gender    @default(UNSPECIFIED)
   address     String?
   isVerified  Boolean   @default(false)
   isAdmin     Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+
+  resetToken          String?   @unique
+  resetTokenExpiresAt DateTime? // Expiration time for the reset token
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  posts          Post[]
-  comments       Comment[]
-  verifications  EmailVerification[]
-  passwordResets PasswordReset[]
-  refreshTokens  RefreshToken[]
+  posts         Post[]
+  comments      Comment[]
+  verifications EmailVerification[]
+  refreshTokens RefreshToken[]
 }
 
 enum Gender {
@@ -40,35 +43,23 @@ enum Gender {
 }
 
 model RefreshToken {
-  id         String   @id @default(cuid())
-  userId     String
-  token      String
-  userAgent  String?
-  ipAddress  String?
+  id        String   @id @default(cuid())
+  userId    String
+  token     String
+  userAgent String?
+  ipAddress String?
   // expiresAt  DateTime // Thêm thời gian hết hạn
-  revoked    Boolean  @default(false) // Đánh dấu token đã bị thu hồi chưa
-  createdAt  DateTime @default(now())
+  revoked   Boolean  @default(false) // Đánh dấu token đã bị thu hồi chưa
+  createdAt DateTime @default(now())
 
   // Quan hệ với User
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, token]) // Một user có thể có nhiều token khác nhau
 }
 
 // Email verification model
 model EmailVerification {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-// Password reset model
-model PasswordReset {
   id        String   @id @default(cuid())
   userId    String
   token     String   @unique

@@ -3,6 +3,9 @@ import { FastifyInstance } from 'fastify';
 import {
   loginResponseJsonSchema,
   messageResponseJsonSchema,
+  refreshTokenJsonSchema,
+  resetPasswordJsonSchema,
+  resetPasswordRequestJsonSchema,
   userLoginJsonSchema,
   userRegisterJsonSchema,
 } from '../../schema';
@@ -51,7 +54,7 @@ export default async function authRoute(fastify: FastifyInstance) {
           required: ['token'],
         },
         response: {
-          200: messageResponseJsonSchema,
+          201: messageResponseJsonSchema,
           400: {
             type: 'object',
             properties: {
@@ -90,4 +93,82 @@ export default async function authRoute(fastify: FastifyInstance) {
     },
     authControllerInstance.login
   );
+
+  fastify.post(
+    '/forgot-password',
+    {
+      schema: {
+        tags: ['Auth'],
+        description: 'Request password reset',
+        body: resetPasswordRequestJsonSchema,
+        response: {
+          201: messageResponseJsonSchema,
+          400: {
+            type: 'object',
+            properties: {
+              statusCode: { type: 'number' },
+              error: { type: 'string' },
+              message: { type: 'string' },
+            },
+            required: ['statusCode', 'error', 'message'],
+          },
+        },
+      },
+    },
+    authControllerInstance.forgotPassword
+  );
+
+  fastify.post(
+    '/reset-password',
+    {
+      schema: {
+        tags: ['Auth'],
+        description: 'Reset password',
+        body: resetPasswordJsonSchema,
+        response: {
+          201: messageResponseJsonSchema,
+          400: {
+            type: 'object',
+            properties: {
+              statusCode: { type: 'number' },
+              error: { type: 'string' },
+              message: { type: 'string' },
+            },
+            required: ['statusCode', 'error', 'message'],
+          },
+        },
+      },
+    },
+    authControllerInstance.resetPassword
+  );
+
+  fastify.post(
+    '/referesh-token',
+    {
+      schema: {
+        tags: ['Auth'],
+        description: 'Refresh access token',
+        body: refreshTokenJsonSchema,
+        response: {
+          201: {
+            types: 'object',
+            properties: {
+              accessToken: { type: 'string' },
+            },
+          },
+          400: {
+            type: 'object',
+            properties: {
+              statusCode: { type: 'number' },
+              error: { type: 'string' },
+              message: { type: 'string' },
+            },
+            required: ['statusCode', 'error', 'message'],
+          },
+        },
+      },
+    },
+    authControllerInstance.refreshToken
+  );
+  // fastify.post('/logout', {}, authControllerInstance.logout);
 }

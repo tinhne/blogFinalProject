@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 
-import { PrismaClient } from '@prisma/client';
 import { FastifyInstance } from 'fastify';
 
 import { env } from '../../config/env';
