@@ -2,9 +2,11 @@ import fastifyJwt from '@fastify/jwt';
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 
+import { env } from '../config/env';
+
 const JwtPlugin: FastifyPluginAsync = async (app) => {
   app.register(fastifyJwt, {
-    secret: process.env.JWT_SECRET || 'supersecret',
+    secret: env.JWT_SECRET || 'supersecret',
   });
 
   // Middleware xác thực và gán kiểu `AuthUser`

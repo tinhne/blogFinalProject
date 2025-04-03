@@ -1,24 +1,21 @@
-import fastifySwagger from '@fastify/swagger';
-import fastifySwaggerUi from '@fastify/swagger-ui';
+import cors from '@fastify/cors';
 import Fastify from 'fastify';
 
-import { swaggerOptions, swaggerUiOptions } from './config/swagger';
+import { loggerConfig } from './config/logger';
 import { registerRoutes } from './modules';
 import { Plugins } from './plugins';
-import { DatabasePlugin } from './plugins/database';
-// import { SwaggerPlugin } from './plugins/swagger';
 
 export function buildApp() {
   const app = Fastify({
-    logger: true,
+    logger: loggerConfig,
   });
 
-  app.register(fastifySwagger, swaggerOptions);
-  app.register(fastifySwaggerUi, swaggerUiOptions);
-  // app.register(SwaggerPlugin);
-  app.register(DatabasePlugin);
+  app.register(cors, {
+    origin: ['*'],
+  });
 
-  app.register(Plugins);
+  Plugins(app);
+
   registerRoutes(app);
 
   return app;

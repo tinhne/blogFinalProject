@@ -42,13 +42,17 @@ enum Gender {
 model RefreshToken {
   id         String   @id @default(cuid())
   userId     String
-  token      String   @unique
+  token      String
   userAgent  String?
   ipAddress  String?
+  // expiresAt  DateTime // Thêm thời gian hết hạn
+  revoked    Boolean  @default(false) // Đánh dấu token đã bị thu hồi chưa
   createdAt  DateTime @default(now())
 
   // Quan hệ với User
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token]) // Một user có thể có nhiều token khác nhau
 }
 
 // Email verification model

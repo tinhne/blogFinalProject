@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-import { UserRegisterInput, VerifyEmailInput } from '../../schema';
+import { UserLoginInput, UserRegisterInput } from '../../schema';
 import { sendVerificationEmail } from '../../utils/email';
 
 import { AuthService } from './auth.service';
@@ -16,10 +16,11 @@ export class AuthController {
     // Ensure the plugin is registered before this point
     this.register = this.register.bind(this);
     this.verifyEmail = this.verifyEmail.bind(this);
+    this.login = this.login.bind(this);
   }
 
   async register(request: FastifyRequest<{ Body: UserRegisterInput }>, reply: FastifyReply) {
-    const { email, password, firstName, lastName, dateOfBirth, gender, address } = request.body;
+    const { email, password, firstName, lastName, ...data } = request.body;
 
     if (!this.fastify.prisma) {
       throw new Error('Prisma is not initialized. Ensure DatabasePlugin is registered before this controller.');
@@ -47,9 +48,7 @@ export class AuthController {
           password: hashedPassword,
           firstName,
           lastName,
-          dateOfBirth,
-          gender,
-          address,
+          ...data,
           avatarUrl: `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=random`,
         },
       });
@@ -71,6 +70,7 @@ export class AuthController {
       await sendVerificationEmail(user.email, user.firstName, verificationToken);
 
       return reply.status(201).send({
+        verificationToken,
         message: 'User registered successfully. Please check your email to verify your account.',
       });
     } catch (error) {
@@ -117,6 +117,75 @@ export class AuthController {
     } catch (error) {
       console.error('[ERROR]', error);
       return reply.status(500).send({ message: 'Internal Server Error' });
+    }
+  }
+
+  async login(request: FastifyRequest<{ Body: UserLoginInput }>, reply: FastifyReply) {
+    const { email, password } = request.body;
+    try {
+      const user = await this.fastify.prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (!user) {
+        return reply.status(401).send({
+          statusCode: 401,
+          error: 'Unauthorized',
+          message: 'Invalid email or password',
+        });
+      }
+
+      // Kiểm tra xem người dùng đã xác thực email chưa
+      if (!user.isVerified) {
+        return reply.status(400).send({
+          statusCode: 400,
+          error: 'Bad Request',
+          message: 'Please verify your email before logging in',
+        });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (!isPasswordValid) {
+        return reply.status(401).send({
+          statusCode: 401,
+          error: 'Unauthorized',
+          message: 'password incorrect',
+        });
+      }
+
+      const { accessToken, refreshToken } = this.AuthService.generateTokens({
+        id: user.id,
+        email: user.email,
+        isAdmin: user.isAdmin,
+      });
+
+      await this.fastify.prisma.refreshToken.create({
+        data: {
+          userId: user.id,
+          token: refreshToken,
+          userAgent: request.headers['user-agent'] || 'unknown',
+          ipAddress: request.ip,
+        },
+      });
+
+      return {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          isVerified: user.isVerified,
+          isAdmin: user.isAdmin,
+        },
+      };
+    } catch (error) {
+      request.log.error(error);
+      return reply.status(500).send({
+        statusCode: 500,
+        error: 'Internal Server Error',
+        message: 'An error occurred while logging in',
+      });
     }
   }
 }
