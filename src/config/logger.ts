@@ -4,7 +4,7 @@ export const loggerConfig = {
     target: 'pino-pretty',
     options: {
       colorize: true,
-      translateTime: 'yyyy-mm-dd HH:MM:ss.l',
+      translateTime: 'yyyy-mm-dd HH:MM:ss.l.Z',
       ignore: 'pid,hostname',
       messageKey: 'msg',
     },

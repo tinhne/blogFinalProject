@@ -45,7 +45,7 @@ enum Gender {
 model RefreshToken {
   id        String   @id @default(cuid())
   userId    String
-  token     String
+  token     String   @unique
   userAgent String?
   ipAddress String?
   // expiresAt  DateTime // Thêm thời gian hết hạn

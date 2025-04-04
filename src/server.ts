@@ -1,7 +1,7 @@
 import { buildApp } from './app';
 
 async function server() {
-  const app = buildApp();
+  const app = await buildApp();
   try {
     console.log('Starting serever...');
     app.listen({

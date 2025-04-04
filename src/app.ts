@@ -5,7 +5,7 @@ import { loggerConfig } from './config/logger';
 import { registerRoutes } from './modules';
 import { Plugins } from './plugins';
 
-export function buildApp() {
+export async function buildApp() {
   const app = Fastify({
     logger: loggerConfig,
   });
@@ -14,7 +14,7 @@ export function buildApp() {
     origin: ['*'],
   });
 
-  Plugins(app);
+  await Plugins(app);
 
   registerRoutes(app);
 

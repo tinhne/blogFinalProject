@@ -279,8 +279,8 @@ export class AuthController {
   async refreshToken(request: FastifyRequest<{ Body: RefreshTokenInput }>, reply: FastifyReply) {
     const { refreshToken } = request.body;
     try {
-      const refeshToken = await this.fastify.prisma.user.findUnique({
-        where: { resetToken: refreshToken },
+      const refeshToken = await this.fastify.prisma.refreshToken.findUnique({
+        where: { token: refreshToken },
       });
 
       if (!refeshToken) {
