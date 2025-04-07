@@ -81,34 +81,3 @@ export async function sendPasswordResetEmail(to: string, firstName: string, toke
   };
   await sendEmail(to, 'Password Reset Request', mailOptions.html);
 }
-// export async function sendPasswordResetEmail(to: string, firstName: string, token: string) {
-//   const resetUrl = `${env.FRONTEND_URL || 'http://localhost:3000'}/api/auth/reset-password`;
-
-//   const mailOptions = {
-//     from: `"Blog System" <${env.EMAIL_FROM}>`,
-//     to,
-//     subject: 'Password Reset Request',
-//     html: `
-//       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-//         <h2>Hello ${firstName},</h2>
-//         <p>We received a request to reset your password. Please use the following token and your new password to reset it:</p>
-//         <div style="text-align: center; margin: 30px 0;">
-//           <p><strong>Reset Password Token:</strong> ${token}</p>
-//         </div>
-//         <p>To reset your password, make a <strong>POST</strong> request to the following URL:</p>
-//         <p><code>${resetUrl}</code></p>
-//         <p>Include the following fields in your request body:</p>
-//         <pre>
-//           {
-//             "token": ${token},
-//             "password": "YourNewPassword123"
-//           }
-//         </pre>
-//         <p>This link and token will expire in 24 hours.</p>
-//         <p>If you didn't request a password reset, you can safely ignore this email.</p>
-//         <p>Best regards,<br>The Blog System Team</p>
-//       </div>
-//     `,
-//   };
-//   await sendEmail(to, 'Password Reset Request', mailOptions.html);
-// }
