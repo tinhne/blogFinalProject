@@ -11,9 +11,10 @@ import {
 } from '../../schema';
 
 import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 
 export default async function authRoute(fastify: FastifyInstance) {
-  const authControllerInstance = new AuthController(fastify);
+  const authControllerInstance = new AuthController(new AuthService(fastify));
 
   fastify.post(
     '/register',
@@ -143,7 +144,7 @@ export default async function authRoute(fastify: FastifyInstance) {
   );
 
   fastify.post(
-    '/referesh-token',
+    '/refresh-token',
     {
       schema: {
         tags: ['Auth'],
