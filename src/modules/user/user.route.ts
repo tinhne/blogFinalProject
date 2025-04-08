@@ -39,6 +39,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
     {
       schema: {
         tags: ['User'],
+        summary: 'Update profile',
         description: 'Update user profile',
         body: userUpdateJsonSchema,
         response: {
@@ -71,5 +72,23 @@ export default async function userRoutes(fastify: FastifyInstance) {
       onRequest: [fastify.authenticate],
     },
     userControllerInstance.changePassword
+  );
+
+  // upload avatar
+  fastify.post(
+    '/avatar',
+    {
+      schema: {
+        tags: ['User'],
+        description: 'Upload user avatar',
+        response: {
+          200: messageResponseJsonSchema,
+          400: errorResponseJsonSchema,
+          401: errorResponseJsonSchema,
+          500: errorResponseJsonSchema,
+        },
+      },
+    },
+    userControllerInstance.uploadAvatar
   );
 }

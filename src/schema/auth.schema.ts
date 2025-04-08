@@ -1,20 +1,16 @@
 import { z } from 'zod';
 import fromZodSchema from 'zod-to-json-schema';
 
+import { dateOfBirthSchema, genderEnum, passwordSchema } from './shared';
+
 // Schema đăng ký người dùng
 export const userRegisterSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
-  password: z
-    .string()
-    .min(8, { message: 'Password must be at least 8 characters long' })
-    .max(16, { message: 'Password must not exceed 16 characters' })
-    .regex(/[a-z][0-9]/, { message: 'Password must contain at least one lowercase letter' })
-    .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
-    .regex(/[!@#$%^&*(),.?":{}|<>]/, { message: 'Password must contain at least one special character' }),
+  password: passwordSchema,
   firstName: z.string().min(1, { message: 'First name is required' }),
   lastName: z.string().min(1, { message: 'Last name is required' }),
-  dateOfBirth: z.string().datetime().optional(), // Dùng string thay vì date để tránh lỗi khi gửi JSON
-  gender: z.enum(['MALE', 'FEMALE', 'UNSPECIFIED']).default('UNSPECIFIED'),
+  dateOfBirth: dateOfBirthSchema,
+  gender: genderEnum.default('UNSPECIFIED'),
   address: z.string().optional(),
 });
 
@@ -32,7 +28,7 @@ export const resetPasswordRequestSchema = z.object({
 // Schema đặt lại mật khẩu
 export const resetPasswordSchema = z.object({
   token: z.string().min(1, { message: 'Reset token is required' }),
-  password: userRegisterSchema.shape.password, //  Dùng lại schema password để tránh lặp code
+  password: passwordSchema,
 });
 
 // Schema phản hồi người dùng
@@ -41,8 +37,8 @@ export const userResponseSchema = z.object({
   email: z.string().email(),
   firstName: z.string(),
   lastName: z.string(),
-  avatar: z.string().optional(),
-  dateOfBirth: z.string().optional(), // Chuyển về string
+  avatarUrl: z.string().optional(),
+  dateOfBirth: dateOfBirthSchema,
   gender: z.enum(['MALE', 'FEMALE', 'UNSPECIFIED']),
   address: z.string().optional(),
   isVerified: z.boolean(),
@@ -67,7 +63,7 @@ export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, { message: 'Refresh token is required' }),
 });
 
-// Xuất JSON Schema cho Swagger (nếu cần)
+// Xuất JSON Schema cho Swagger (swagger UI)
 export const userLoginJsonSchema = fromZodSchema(userLoginSchema, { target: 'openApi3' });
 export const resetPasswordRequestJsonSchema = fromZodSchema(resetPasswordRequestSchema, { target: 'openApi3' });
 export const resetPasswordJsonSchema = fromZodSchema(resetPasswordSchema, { target: 'openApi3' });

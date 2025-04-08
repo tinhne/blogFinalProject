@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 
-import { errorResponseJsonSchema } from '@app/schema/shared/commonResponseSchema';
+import { errorResponseJsonSchema } from '@app/schema/shared/error';
 
 import {
   loginResponseJsonSchema,
