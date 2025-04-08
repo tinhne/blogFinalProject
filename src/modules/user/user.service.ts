@@ -1,80 +1,49 @@
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 import { userProfileSelect } from '@app/constant/prisma.select';
 import { UserChangePasswordInput, UserUpdateInput } from '@app/schema/user.schema';
+import { AppError } from '@app/utils/errors';
 
 export class UserService {
   constructor(private prisma: PrismaClient) {}
 
-  // Cập nhật user
   async update(userId: string, data: UserUpdateInput) {
     const { firstName, lastName, avatarUrl, dateOfBirth, gender, address } = data;
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        ...(firstName && { firstName }),
-        ...(lastName && { lastName }),
-        ...(avatarUrl && { avatarUrl }),
-        ...(dateOfBirth && { dateOfBirth: new Date(dateOfBirth) }),
-        ...(gender && { gender }),
-        ...(address && { address }),
-      },
-      select: userProfileSelect,
-    });
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...(firstName && { firstName }),
+          ...(lastName && { lastName }),
+          ...(avatarUrl && { avatarUrl }),
+          ...(dateOfBirth && { dateOfBirth: new Date(dateOfBirth) }),
+          ...(gender && { gender }),
+          ...(address && { address }),
+        },
+        select: userProfileSelect,
+      });
 
-    if (!user) {
-      throw new Error('User not found');
+      return user;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new AppError('Record not found', 404);
+      }
+      throw new AppError('Failed to update user', 500);
     }
-    return user;
-  }
-
-  // Xoá user
-  async delete(userId: string): Promise<User> {
-    return this.prisma.user.delete({
-      where: { id: userId },
-    });
   }
 
   // Lấy thông tin 1 user kèm bài viết & bình luận
   async show(userId: string) {
-    const user = this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        avatarUrl: true,
-        dateOfBirth: true,
-        gender: true,
-        address: true,
-        isVerified: true,
-        isAdmin: true,
-        createdAt: true,
-        updatedAt: true,
-        posts: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            visibility: true,
-            createdAt: true,
-          },
-        },
-        comments: {
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            postId: true,
-          },
-        },
-      },
+      select: userProfileSelect,
     });
+
     if (!user) {
-      throw new Error('User not found');
+      throw new AppError('User not found', 404);
     }
+
     return user;
   }
 
@@ -96,7 +65,7 @@ export class UserService {
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
     if (!isPasswordValid) {
-      throw new Error('Current password is incorrect');
+      throw new AppError('Current password is incorrect', 400);
     }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);

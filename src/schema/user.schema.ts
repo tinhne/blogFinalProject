@@ -1,49 +1,33 @@
-// user.schema.ts
 import { z } from 'zod';
 import fromZodSchema from 'zod-to-json-schema';
+
+import { dateOfBirthSchema, passwordSchema, genderEnum, successWrapperSchema } from './shared';
 
 // User update schema
 export const userUpdateSchema = z.object({
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
   avatarUrl: z.string().url().optional(),
-  dateOfBirth: z.string().datetime().optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'UNSPECIFIED']).optional(),
+  dateOfBirth: dateOfBirthSchema,
+  gender: genderEnum.optional(),
   address: z.string().optional(),
 });
 
 // Change password schema
 export const userChangePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z
-    .string()
-    .min(8, { message: 'Password must be at least 8 characters long' })
-    .max(16, { message: 'Password must not exceed 16 characters' })
-    .regex(/[a-z][0-9]/, { message: 'Password must contain at least one lowercase letter' })
-    .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
-    .regex(/[!@#$%^&*(),.?":{}|<>]/, { message: 'Password must contain at least one special character' }),
+  newPassword: passwordSchema,
 });
 
 // User profile response schema
 export const userProfileResponseSchema = z.object({
-  id: z.string().uuid(),
   email: z.string().email(),
   firstName: z.string(),
   lastName: z.string(),
   avatarUrl: z.string().optional(),
-  dateOfBirth: z.string().datetime().optional(),
-  gender: z.enum(['MALE', 'FEMALE', 'UNSPECIFIED']),
+  dateOfBirth: dateOfBirthSchema,
+  gender: genderEnum.optional(),
   address: z.string().optional(),
-  isVerified: z.boolean(),
-  isAdmin: z.boolean(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime().optional(),
-  _count: z
-    .object({
-      posts: z.number(),
-      comments: z.number(),
-    })
-    .optional(),
 });
 
 // User posts response schema
@@ -114,12 +98,6 @@ export const loginSessionsResponseSchema = z.array(
   })
 );
 // Bọc schema trong một successWrapperSchema
-const successWrapperSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
-  z.object({
-    statusCode: z.number(),
-    data: dataSchema,
-    message: z.string().optional(),
-  });
 const userProfileSuccessSchema = successWrapperSchema(userProfileResponseSchema);
 
 // JSON Schema for Swagger

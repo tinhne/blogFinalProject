@@ -17,7 +17,7 @@ model User {
   firstName   String
   lastName    String
   avatarUrl   String?
-  dateOfBirth DateTime?
+  dateOfBirth DateTime? @db.Date
   gender      Gender    @default(UNSPECIFIED)
   address     String?
   isVerified  Boolean   @default(false)

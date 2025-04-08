@@ -15,7 +15,6 @@ import { AuthService } from './auth.service';
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
   @binding
   async register(request: FastifyRequest<{ Body: UserRegisterInput }>, reply: FastifyReply) {
     try {

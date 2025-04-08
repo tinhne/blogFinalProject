@@ -30,6 +30,7 @@ export class AuthService {
         firstName,
         lastName,
         ...otherData,
+        dateOfBirth: otherData.dateOfBirth ? new Date(otherData.dateOfBirth) : undefined,
         avatarUrl: `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=random`,
       },
     });

@@ -1,10 +1,11 @@
-import fastifyMultipart from '@fastify/multipart';
-import fp from 'fastify-plugin';
+// src/plugins/multipart.ts
+import multipart from '@fastify/multipart';
+import { FastifyPluginAsync } from 'fastify';
 
-export default fp(async (fastify) => {
-  fastify.register(fastifyMultipart, {
+export const MultipartPlugin: FastifyPluginAsync = async (app) => {
+  app.register(multipart, {
     limits: {
-      fileSize: 5 * 1024 * 1024, // giới hạn 5MB
+      fileSize: 10 * 1024 * 1024,
     },
   });
-});
+};
