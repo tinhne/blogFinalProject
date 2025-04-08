@@ -6,7 +6,6 @@ import { AuthUser } from '../../types/fastify'; // Import kiểu `AuthUser`
 export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
   try {
     await request.jwtVerify();
-    request.user = request.user as AuthUser; // Gán kiểu AuthUser để tránh lỗi TS
   } catch (err) {
     reply.status(401).send({
       statusCode: 401,
@@ -20,8 +19,6 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
 export async function authenticateAdmin(request: FastifyRequest, reply: FastifyReply) {
   try {
     await request.jwtVerify();
-    request.user = request.user as AuthUser; // Ép kiểu lại để tránh lỗi TS
-
     if (!(request.user as AuthUser).isAdmin) {
       return reply.status(403).send({
         statusCode: 403,
