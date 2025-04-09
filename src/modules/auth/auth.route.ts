@@ -1,9 +1,12 @@
 import { FastifyInstance } from 'fastify';
 
+import { errorResponseJsonSchema } from '@app/schema/shared/error';
+
 import {
   loginResponseJsonSchema,
   messageResponseJsonSchema,
   refreshTokenJsonSchema,
+  resendVerificationJsonSchema,
   resetPasswordJsonSchema,
   resetPasswordRequestJsonSchema,
   userLoginJsonSchema,
@@ -25,15 +28,8 @@ export default async function authRoute(fastify: FastifyInstance) {
         body: userRegisterJsonSchema,
         response: {
           201: messageResponseJsonSchema,
-          400: {
-            type: 'object',
-            properties: {
-              statusCode: { type: 'number' },
-              error: { type: 'string' },
-              message: { type: 'string' },
-            },
-            required: ['statusCode', 'error', 'message'],
-          },
+          409: errorResponseJsonSchema,
+          500: errorResponseJsonSchema,
         },
       },
       // onRequest: [fastify.authenticate],
@@ -56,15 +52,8 @@ export default async function authRoute(fastify: FastifyInstance) {
         },
         response: {
           201: messageResponseJsonSchema,
-          400: {
-            type: 'object',
-            properties: {
-              statusCode: { type: 'number' },
-              error: { type: 'string' },
-              message: { type: 'string' },
-            },
-            required: ['statusCode', 'error', 'message'],
-          },
+          400: errorResponseJsonSchema,
+          500: errorResponseJsonSchema,
         },
       },
     },
@@ -80,15 +69,9 @@ export default async function authRoute(fastify: FastifyInstance) {
         body: userLoginJsonSchema,
         response: {
           201: loginResponseJsonSchema,
-          400: {
-            type: 'object',
-            properties: {
-              statusCode: { type: 'number' },
-              error: { type: 'string' },
-              message: { type: 'string' },
-            },
-            required: ['statusCode', 'error', 'message'],
-          },
+          401: errorResponseJsonSchema,
+          403: errorResponseJsonSchema,
+          500: errorResponseJsonSchema,
         },
       },
     },
@@ -104,15 +87,8 @@ export default async function authRoute(fastify: FastifyInstance) {
         body: resetPasswordRequestJsonSchema,
         response: {
           201: messageResponseJsonSchema,
-          400: {
-            type: 'object',
-            properties: {
-              statusCode: { type: 'number' },
-              error: { type: 'string' },
-              message: { type: 'string' },
-            },
-            required: ['statusCode', 'error', 'message'],
-          },
+          404: errorResponseJsonSchema,
+          500: errorResponseJsonSchema,
         },
       },
     },
@@ -128,15 +104,9 @@ export default async function authRoute(fastify: FastifyInstance) {
         body: resetPasswordJsonSchema,
         response: {
           201: messageResponseJsonSchema,
-          400: {
-            type: 'object',
-            properties: {
-              statusCode: { type: 'number' },
-              error: { type: 'string' },
-              message: { type: 'string' },
-            },
-            required: ['statusCode', 'error', 'message'],
-          },
+          400: errorResponseJsonSchema,
+          404: errorResponseJsonSchema,
+          500: errorResponseJsonSchema,
         },
       },
     },
@@ -151,25 +121,29 @@ export default async function authRoute(fastify: FastifyInstance) {
         description: 'Refresh access token',
         body: refreshTokenJsonSchema,
         response: {
-          201: {
-            types: 'object',
-            properties: {
-              accessToken: { type: 'string' },
-            },
-          },
-          400: {
-            type: 'object',
-            properties: {
-              statusCode: { type: 'number' },
-              error: { type: 'string' },
-              message: { type: 'string' },
-            },
-            required: ['statusCode', 'error', 'message'],
-          },
+          201: messageResponseJsonSchema,
+          401: errorResponseJsonSchema,
+          500: errorResponseJsonSchema,
         },
       },
     },
     authControllerInstance.refreshToken
   );
-  // fastify.post('/logout', {}, authControllerInstance.logout);
+  fastify.post(
+    '/resend-verification',
+    {
+      schema: {
+        tags: ['Auth'],
+        description: 'Resend email verification',
+        body: resendVerificationJsonSchema,
+        response: {
+          201: messageResponseJsonSchema,
+          400: errorResponseJsonSchema,
+          404: errorResponseJsonSchema,
+          500: errorResponseJsonSchema,
+        },
+      },
+    },
+    authControllerInstance.resendVerificationEmail
+  );
 }

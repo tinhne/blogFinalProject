@@ -1,9 +1,11 @@
 import bcrypt from 'bcrypt';
 import { FastifyInstance } from 'fastify';
 
+import { AppError } from '@app/utils/errors';
+
 import { ResetPasswordInput, UserLoginInput, UserRegisterInput } from '../../schema';
 import { sendPasswordResetEmail, sendVerificationEmail } from '../../utils/email';
-import { TokenError, TokenUser, generateSecureToken, generateTokens } from '../../utils/token';
+import { TokenUser, generateSecureToken, generateTokens } from '../../utils/token';
 
 export class AuthService {
   constructor(private fastify: FastifyInstance) {}
@@ -17,7 +19,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new Error('Email already exists');
+      throw new AppError('Email already exists', 409);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -30,6 +32,7 @@ export class AuthService {
         firstName,
         lastName,
         ...otherData,
+        dateOfBirth: otherData.dateOfBirth ? new Date(otherData.dateOfBirth) : undefined,
         avatarUrl: `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=random`,
       },
     });
@@ -60,12 +63,12 @@ export class AuthService {
     });
 
     if (!verificationRecord) {
-      throw new Error('Invalid verification token');
+      throw new AppError('Invalid verification token', 401);
     }
 
     if (verificationRecord.expiresAt < new Date()) {
       await this.fastify.prisma.emailVerification.delete({ where: { id: verificationRecord.id } });
-      throw new Error('Verification token has expired');
+      throw new AppError('Verification token has expired', 401);
     }
 
     // Mark user as verified
@@ -88,18 +91,18 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new Error('Invalid email');
+      throw new AppError('user not found', 404);
     }
 
     // Check if email is verified
     if (!user.isVerified) {
-      throw new Error('Please verify your email before logging in');
+      throw new AppError('Please verify your email before logging in', 403);
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw new Error('Password incorrect');
+      throw new AppError('Password incorrect', 401);
     }
 
     const tokenUser: TokenUser = {
@@ -110,11 +113,19 @@ export class AuthService {
 
     const { accessToken, refreshToken } = generateTokens(this.fastify, tokenUser);
 
+    await this.fastify.prisma.refreshToken.deleteMany({
+      where: {
+        userId: user.id,
+        userAgent: userAgent || 'unknown',
+        ipAddress,
+      },
+    });
     // Store refresh token
     await this.fastify.prisma.refreshToken.create({
       data: {
         userId: user.id,
         token: refreshToken,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 30 days
         userAgent: userAgent || 'unknown',
         ipAddress,
       },
@@ -138,7 +149,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new AppError('User not found', 404);
     }
 
     // Generate reset token
@@ -164,11 +175,11 @@ export class AuthService {
     const user = await this.fastify.prisma.user.findUnique({ where: { resetToken: token } });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new AppError('User not found', 404);
     }
 
     if (user.resetTokenExpiresAt < new Date()) {
-      throw new Error('Reset token has expired');
+      throw new AppError('Reset token has expired', 401);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -186,49 +197,76 @@ export class AuthService {
   }
 
   async refreshToken(token: string) {
-    try {
-      const storedToken = await this.fastify.prisma.refreshToken.findUnique({
-        where: { token },
-        include: { user: true },
-      });
+    const storedToken = await this.fastify.prisma.refreshToken.findUnique({
+      where: { token },
+      include: { user: true },
+    });
 
-      if (!storedToken) {
-        throw new TokenError('Invalid refresh token');
-      }
-
-      // Verify the token
-      const decoded = this.fastify.jwt.verify<TokenUser & { type: string }>(token);
-
-      if (decoded.type !== 'refresh') {
-        throw new TokenError('Invalid token type');
-      }
-
-      const user = await this.fastify.prisma.user.findUnique({
-        where: { id: decoded.id },
-        select: {
-          id: true,
-          email: true,
-          isAdmin: true,
-        },
-      });
-
-      if (!user) {
-        throw new TokenError('User not found');
-      }
-
-      // Generate new access token
-      const accessToken = generateTokens(this.fastify, user).accessToken;
-
-      return { accessToken };
-    } catch (error) {
-      if (error instanceof TokenError) {
-        throw error;
-      } else if (error.name === 'JsonWebTokenError') {
-        throw new TokenError('Invalid or malformed token');
-      } else if (error.name === 'TokenExpiredError') {
-        throw new TokenError('Token has expired');
-      }
-      throw new TokenError('Unable to refresh access token');
+    if (!storedToken) {
+      throw new AppError('Invalid refresh token', 401);
     }
+    if (storedToken.revoked) {
+      throw new AppError('Refresh token has been revoked', 401);
+    }
+
+    if (storedToken.expiresAt < new Date()) {
+      throw new AppError('Refresh token has expired', 401);
+    }
+
+    // Verify the token
+    const decoded = this.fastify.jwt.verify<TokenUser & { type: string }>(token);
+
+    if (decoded.type !== 'refresh') {
+      throw new AppError('Invalid token type', 401);
+    }
+
+    const user = await this.fastify.prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        isAdmin: true,
+      },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    // Generate new access token
+    const accessToken = generateTokens(this.fastify, user).accessToken;
+
+    return { accessToken };
+  }
+  async resendVerification(email: string) {
+    const user = await this.fastify.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    if (user.isVerified) {
+      throw new AppError('User is already verified', 400);
+    }
+
+    // Xóa token cũ nếu tồn tại
+    await this.fastify.prisma.emailVerification.deleteMany({
+      where: { userId: user.id },
+    });
+
+    const newToken = generateSecureToken();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 ngày
+
+    await this.fastify.prisma.emailVerification.create({
+      data: {
+        userId: user.id,
+        token: newToken,
+        expiresAt,
+      },
+    });
+
+    await sendVerificationEmail(user.email, user.firstName, newToken);
   }
 }
