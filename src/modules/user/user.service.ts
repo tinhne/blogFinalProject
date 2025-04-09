@@ -90,15 +90,15 @@ export class UserService {
   }
 
   async uploadAvatar(userId: string, file: MultipartFile): Promise<string> {
-    const avatarUrl = await handleImageUpload(file, 'avatar');
+    const { url } = await handleImageUpload(file, 'avatar');
 
     // update user trong db
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        avatarUrl: avatarUrl,
+        avatarUrl: url,
       },
     });
-    return avatarUrl;
+    return url;
   }
 }
