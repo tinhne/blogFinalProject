@@ -63,6 +63,10 @@ export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, { message: 'Refresh token is required' }),
 });
 
+export const resendVerificationSchema = z.object({
+  email: z.string().email({ message: 'Invalid email address' }),
+});
+
 // Xuất JSON Schema cho Swagger (swagger UI)
 export const userLoginJsonSchema = fromZodSchema(userLoginSchema, { target: 'openApi3' });
 export const resetPasswordRequestJsonSchema = fromZodSchema(resetPasswordRequestSchema, { target: 'openApi3' });
@@ -72,6 +76,7 @@ export const userRegisterJsonSchema = fromZodSchema(userRegisterSchema, { target
 export const userResponseJsonSchema = fromZodSchema(userResponseSchema, { target: 'openApi3' });
 export const messageResponseJsonSchema = fromZodSchema(messageResponseSchema, { target: 'openApi3' });
 export const loginResponseJsonSchema = fromZodSchema(loginResponseSchema, { target: 'openApi3' });
+export const resendVerificationJsonSchema = fromZodSchema(resendVerificationSchema, { target: 'openApi3' });
 
 // Xuất TypeScript types
 export type UserRegisterInput = z.infer<typeof userRegisterSchema>;
@@ -80,3 +85,4 @@ export type ResetPasswordRequestInput = z.infer<typeof resetPasswordRequestSchem
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
 export type MessageResponse = z.infer<typeof messageResponseSchema>;
+export type UserResponse = z.infer<typeof userResponseSchema>;

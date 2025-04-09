@@ -26,4 +26,24 @@ export class UserController {
     await this.userService.changePassword(request.user.id, request.body);
     return reply.success({}, 'Password changed successfully');
   }
+
+  @binding
+  async uploadAvatar(request: FastifyRequest, reply: FastifyReply) {
+    const file = await request.file();
+    const userId = request.user?.id;
+
+    if (!userId) {
+      return reply.error('User not found', 404);
+    }
+
+    if (!file) {
+      return reply.error('Missing avatar file', 400);
+    }
+
+    const avatarUrl = await this.userService.uploadAvatar(userId, file);
+    if (!avatarUrl) {
+      return reply.error('"url" is required!', 500);
+    }
+    return reply.success({ url: avatarUrl }, 'Avatar uploaded successfully');
+  }
 }

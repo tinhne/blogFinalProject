@@ -81,13 +81,12 @@ export default async function userRoutes(fastify: FastifyInstance) {
       schema: {
         tags: ['User'],
         description: 'Upload user avatar',
+        consumes: ['multipart/form-data'],
         response: {
           200: messageResponseJsonSchema,
-          400: errorResponseJsonSchema,
-          401: errorResponseJsonSchema,
-          500: errorResponseJsonSchema,
         },
       },
+      onRequest: [fastify.authenticate],
     },
     userControllerInstance.uploadAvatar
   );

@@ -1,26 +1,30 @@
+import { MultipartFile } from '@fastify/multipart';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 import { userProfileSelect } from '@app/constant/prisma.select';
 import { UserChangePasswordInput, UserUpdateInput } from '@app/schema/user.schema';
 import { AppError } from '@app/utils/errors';
+import { handleImageUpload } from '@app/utils/file';
 
 export class UserService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) {}
 
   async update(userId: string, data: UserUpdateInput) {
     const { firstName, lastName, avatarUrl, dateOfBirth, gender, address } = data;
     try {
+      const updateData: Record<string, any> = {};
+
+      if (firstName !== undefined) updateData.firstName = firstName;
+      if (lastName !== undefined) updateData.lastName = lastName;
+      if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
+      if (dateOfBirth !== undefined) updateData.dateOfBirth = new Date(dateOfBirth);
+      if (gender !== undefined) updateData.gender = gender;
+      if (address !== undefined) updateData.address = address;
+
       const user = await this.prisma.user.update({
         where: { id: userId },
-        data: {
-          ...(firstName && { firstName }),
-          ...(lastName && { lastName }),
-          ...(avatarUrl && { avatarUrl }),
-          ...(dateOfBirth && { dateOfBirth: new Date(dateOfBirth) }),
-          ...(gender && { gender }),
-          ...(address && { address }),
-        },
+        data: updateData,
         select: userProfileSelect,
       });
 
@@ -77,6 +81,24 @@ export class UserService {
       },
     });
 
+    await this.prisma.refreshToken.updateMany({
+      where: { userId: user.id },
+      data: { revoked: true },
+    });
+
     return { success: true };
+  }
+
+  async uploadAvatar(userId: string, file: MultipartFile): Promise<string> {
+    const avatarUrl = await handleImageUpload(file, 'avatar');
+
+    // update user trong db
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        avatarUrl: avatarUrl,
+      },
+    });
+    return avatarUrl;
   }
 }
