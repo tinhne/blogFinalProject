@@ -21,4 +21,9 @@ export const env = {
   SMTP_PASS: process.env.SMTP_PASS || 'shibashiba',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
   EMAIL_FROM: process.env.EMAIL_FROM || 'levantrungtinh123@gmail.com',
+
+  AWS_REGION: process.env.AWS_REGION || 'ap-southeast-1',
+  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+  S3_BUCKET_NAME: process.env.S3_BUCKET_NAME || 'bucket-name',
 };

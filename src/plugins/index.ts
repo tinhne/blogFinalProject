@@ -11,9 +11,10 @@ import { SwaggerPlugin } from './swagger';
 export const Plugins = async (app: FastifyInstance) => {
   replyDecorator(app);
   SwaggerPlugin(app);
+  MultipartPlugin(app);
+
   await app.register(DatabasePlugin);
   await app.register(RateLimitPlugin);
   await app.register(JwtPlugin);
-  await app.register(MultipartPlugin);
   await app.register(errorHandler);
 };

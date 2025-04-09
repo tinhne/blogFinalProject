@@ -6,6 +6,7 @@ import {
   loginResponseJsonSchema,
   messageResponseJsonSchema,
   refreshTokenJsonSchema,
+  resendVerificationJsonSchema,
   resetPasswordJsonSchema,
   resetPasswordRequestJsonSchema,
   userLoginJsonSchema,
@@ -128,5 +129,21 @@ export default async function authRoute(fastify: FastifyInstance) {
     },
     authControllerInstance.refreshToken
   );
-  // fastify.post('/logout', {}, authControllerInstance.logout);
+  fastify.post(
+    '/resend-verification',
+    {
+      schema: {
+        tags: ['Auth'],
+        description: 'Resend email verification',
+        body: resendVerificationJsonSchema,
+        response: {
+          201: messageResponseJsonSchema,
+          400: errorResponseJsonSchema,
+          404: errorResponseJsonSchema,
+          500: errorResponseJsonSchema,
+        },
+      },
+    },
+    authControllerInstance.resendVerificationEmail
+  );
 }
