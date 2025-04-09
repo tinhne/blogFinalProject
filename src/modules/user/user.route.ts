@@ -82,11 +82,27 @@ export default async function userRoutes(fastify: FastifyInstance) {
         tags: ['User'],
         description: 'Upload user avatar',
         consumes: ['multipart/form-data'],
+        body: {
+          type: 'object',
+          properties: {
+            file: {
+              type: 'string',
+              format: 'binary',
+            },
+          },
+          required: ['file'],
+        },
         response: {
           200: messageResponseJsonSchema,
         },
       },
       onRequest: [fastify.authenticate],
+      validatorCompiler: ({ schema, method, url, httpPart }) => {
+        if (httpPart === 'body') {
+          return () => true; // always valid
+        }
+        return fastify.validatorCompiler({ schema, method, url, httpPart });
+      },
     },
     userControllerInstance.uploadAvatar
   );
