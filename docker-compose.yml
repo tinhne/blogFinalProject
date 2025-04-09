@@ -1,0 +1,46 @@
+version: "3.8"
+services:
+  database:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    ports:
+      - 5434:5432 # Chạy PostgreSQL Docker trên cổng 5433 để tránh xung đột
+    env_file: 
+      - .env
+    networks:
+      - app-networks
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # healthcheck:
+    #   test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+    #   interval: 5s
+    #   timeout: 5s
+    #   retries: 5
+
+  backend:
+    build: .
+    container_name: fastify_backend
+    restart: always
+    depends_on:
+      database:
+        condition: service_healthy  # Chờ đến khi database sẵn sàng
+    ports:
+      - 8080:3000
+    env_file: 
+      - .env
+    networks:
+      - app-networks
+    volumes:
+      - .:/app
+      - /app/node_modules # Tránh ghi đè node_modules
+
+networks:
+  app-networks:
+    driver: bridge
+  
+volumes:
+  postgres_data:
+
+
+    
