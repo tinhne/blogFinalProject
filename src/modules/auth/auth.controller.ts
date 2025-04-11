@@ -38,8 +38,8 @@ export class AuthController {
   }
   @binding
   async forgotPassword(request: FastifyRequest<{ Body: ResetPasswordRequestInput }>, reply: FastifyReply) {
-    await this.authService.requestPasswordReset(request.body.email);
-    return reply.success('Password reset email sent successfully');
+    const result = await this.authService.requestPasswordReset(request.body.email);
+    return { resetToken: result.resetToken };
   }
   @binding
   async resetPassword(request: FastifyRequest<{ Body: ResetPasswordInput }>, reply: FastifyReply) {

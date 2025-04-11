@@ -3,7 +3,7 @@ import swaggerUI from '@fastify/swagger-ui';
 import { FastifyInstance } from 'fastify';
 
 export async function SwaggerPlugin(fastify: FastifyInstance) {
-  console.log('✅ Registering Swagger...'); // Thêm log để debug
+  console.log('Registering Swagger...'); // Thêm log để debug
 
   await fastify.register(swagger, {
     openapi: {

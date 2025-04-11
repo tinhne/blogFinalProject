@@ -30,63 +30,6 @@ export const userProfileResponseSchema = z.object({
   address: z.string().optional(),
 });
 
-// User posts response schema
-// export const userPostsResponseSchema = z.object({
-//   posts: z.array(
-//     z.object({
-//       id: z.string().uuid(),
-//       title: z.string(),
-//       slug: z.string(),
-//       excerpt: z.string(),
-//       status: z.enum(['PUBLIC', 'PRIVATE', 'DRAFT']),
-//       featuredImage: z.string().url().optional(),
-//       viewCount: z.number(),
-//       createdAt: z.string().datetime(),
-//       updatedAt: z.string().datetime(),
-//       category: z
-//         .object({
-//           id: z.string().uuid(),
-//           name: z.string(),
-//           slug: z.string(),
-//         })
-//         .optional(),
-//       _count: z.object({
-//         comments: z.number(),
-//       }),
-//     })
-//   ),
-//   meta: z.object({
-//     totalCount: z.number(),
-//     currentPage: z.number(),
-//     totalPages: z.number(),
-//     perPage: z.number(),
-//   }),
-// });
-
-// User comments response schema
-// export const userCommentsResponseSchema = z.object({
-//   comments: z.array(
-//     z.object({
-//       id: z.string().uuid(),
-//       content: z.string(),
-//       status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
-//       createdAt: z.string().datetime(),
-//       updatedAt: z.string().datetime(),
-//       post: z.object({
-//         id: z.string().uuid(),
-//         title: z.string(),
-//         slug: z.string(),
-//       }),
-//     })
-//   ),
-//   meta: z.object({
-//     totalCount: z.number(),
-//     currentPage: z.number(),
-//     totalPages: z.number(),
-//     perPage: z.number(),
-//   }),
-// });
-
 // Login sessions response schema
 export const loginSessionsResponseSchema = z.array(
   z.object({
@@ -104,14 +47,10 @@ const userProfileSuccessSchema = successWrapperSchema(userProfileResponseSchema)
 export const userUpdateJsonSchema = fromZodSchema(userUpdateSchema, { target: 'openApi3' });
 export const userChangePasswordJsonSchema = fromZodSchema(userChangePasswordSchema, { target: 'openApi3' });
 export const userProfileResponseJsonSchema = fromZodSchema(userProfileSuccessSchema, { target: 'openApi3' });
-// export const userPostsResponseJsonSchema = fromZodSchema(userPostsResponseSchema, { target: 'openApi3' });
-// export const userCommentsResponseJsonSchema = fromZodSchema(userCommentsResponseSchema, { target: 'openApi3' });
 export const loginSessionsResponseJsonSchema = fromZodSchema(loginSessionsResponseSchema, { target: 'openApi3' });
 
 // TypeScript types
 export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 export type UserChangePasswordInput = z.infer<typeof userChangePasswordSchema>;
 export type UserProfileResponse = z.infer<typeof userProfileResponseSchema>;
-// export type UserPostsResponse = z.infer<typeof userPostsResponseSchema>;
-// export type UserCommentsResponse = z.infer<typeof userCommentsResponseSchema>;
 export type LoginSessionsResponse = z.infer<typeof loginSessionsResponseSchema>;

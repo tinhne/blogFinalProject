@@ -6,6 +6,7 @@ import JwtPlugin from './jwt';
 import { MultipartPlugin } from './multipart';
 import RateLimitPlugin from './rate-limit';
 import replyDecorator from './replyDecorator';
+import fastifyStatic from './static';
 import { SwaggerPlugin } from './swagger';
 
 export const Plugins = async (app: FastifyInstance) => {
@@ -17,4 +18,5 @@ export const Plugins = async (app: FastifyInstance) => {
   await app.register(RateLimitPlugin);
   await app.register(JwtPlugin);
   await app.register(errorHandler);
+  await app.register(fastifyStatic);
 };

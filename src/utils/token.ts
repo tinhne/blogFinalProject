@@ -16,6 +16,7 @@ export interface TokenUser {
   id: string;
   email: string;
   isAdmin: boolean;
+  type?: string;
 }
 
 export const generateAccessToken = (fastify: FastifyInstance, user: TokenUser) => {
@@ -38,7 +39,7 @@ export const generateRefreshToken = (fastify: FastifyInstance, user: TokenUser) 
       email: user.email,
       isAdmin: user.isAdmin,
       type: 'refresh',
-    },
+    } as TokenUser,
     {
       expiresIn: env.REFRESH_TOKEN_EXPIRY, // 7 days
     }

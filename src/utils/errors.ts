@@ -1,4 +1,3 @@
-// src/common/error/app-error.ts
 export class AppError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean; // Dùng để phân biệt lỗi do logic app hay lỗi hệ thống

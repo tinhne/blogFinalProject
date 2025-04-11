@@ -17,6 +17,7 @@ declare module 'fastify' {
 
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authenticateAdmin: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     prisma: PrismaClient;
   }
 }
