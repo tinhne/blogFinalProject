@@ -22,6 +22,29 @@ const JwtPlugin: FastifyPluginAsync = async (app) => {
       });
     }
   });
+  // Middleware authenticateAdmin: kiểm tra quyền admin
+  app.decorate('authenticateAdmin', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+      const user = request.user;
+
+      if (!user?.isAdmin) {
+        return reply.status(403).send({
+          statusCode: 403,
+          error: 'Forbidden',
+          message: 'Admin privileges required',
+        });
+      }
+
+      request.user = user;
+    } catch (err) {
+      reply.status(401).send({
+        statusCode: 401,
+        error: 'Unauthorized',
+        message: 'Authentication required',
+      });
+    }
+  });
 };
 
 export default fp(JwtPlugin);

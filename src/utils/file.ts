@@ -2,11 +2,10 @@ import { randomUUID } from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 
-import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { MultipartFile } from '@fastify/multipart';
 import sharp from 'sharp';
 
-import { s3Client, S3_BUCKET } from '@app/config/aws';
+import { env } from '@app/config/env';
 
 import { AppError } from './errors';
 
@@ -23,7 +22,10 @@ export async function saveBufferToLocal(buffer: Buffer, originalFileName: string
   const uploadDir = path.join(__dirname, '../../public', fileName);
   await fs.mkdir(path.dirname(uploadDir), { recursive: true });
   await fs.writeFile(uploadDir, buffer);
-  return `/public/${fileName}`;
+  // return `/public/${fileName}`;
+  const host = env.BASE_URL || 'http://localhost:3000';
+
+  return `${host}/public/${fileName}`;
 }
 
 export async function deleteLocalFile(relativePath: string) {
@@ -34,58 +36,6 @@ export async function deleteLocalFile(relativePath: string) {
     console.warn('File not found:', relativePath);
   }
 }
-
-export async function uploadFileBufferToS3(
-  buffer: Buffer,
-  originalFileName: string,
-  mimetype: string,
-  folder: string
-): Promise<string> {
-  const fileName = generateFileName(originalFileName, folder);
-
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: S3_BUCKET,
-      Key: fileName,
-      Body: buffer,
-      ContentType: mimetype,
-      ACL: 'public-read',
-    })
-  );
-
-  return `https://${S3_BUCKET}.s3.amazonaws.com/${fileName}`;
-}
-
-// export async function handleImageUpload(
-//   file: MultipartFile,
-//   folder: 'avatar' | 'post',
-//   generateThumbnail = false
-// ): Promise<{ url: string; thumbnail?: string }> {
-//   if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-//     throw new AppError('Chỉ chấp nhận PNG, JPG, JPEG', 400);
-//   }
-
-//   const buffer = await file.toBuffer();
-//   if (buffer.length > MAX_FILE_SIZE) {
-//     throw new AppError('File vượt quá kích thước cho phép (10MB)', 400);
-//   }
-
-//   const url =
-//     process.env.NODE_ENV === 'production'
-//       ? await uploadFileBufferToS3(buffer, file.filename, file.mimetype, folder)
-//       : await saveBufferToLocal(buffer, file.filename, folder);
-
-//   let thumbnail: string | undefined;
-//   if (generateThumbnail) {
-//     const thumbBuffer = await sharp(buffer).resize(300).jpeg({ quality: 70 }).toBuffer();
-//     thumbnail =
-//       process.env.NODE_ENV === 'production'
-//         ? await uploadFileBufferToS3(thumbBuffer, `thumb-${file.filename}`, file.mimetype, folder)
-//         : await saveBufferToLocal(thumbBuffer, `thumb-${file.filename}`, folder);
-//   }
-
-//   return { url, thumbnail };
-// }
 
 export async function handleImageUpload(
   file: MultipartFile,
@@ -100,18 +50,12 @@ export async function handleImageUpload(
     throw new AppError('File vượt quá kích thước cho phép (10MB)', 400);
   }
 
-  const url =
-    process.env.NODE_ENV === 'production'
-      ? await uploadFileBufferToS3(buffer, file.filename, file.mimetype, folder)
-      : await saveBufferToLocal(buffer, file.filename, folder);
+  const url = await saveBufferToLocal(buffer, file.filename, folder);
 
   // Chỉ tạo thumbnail nếu folder là "post"
   if (folder === 'post') {
     const thumbBuffer = await sharp(buffer).resize(300).jpeg({ quality: 70 }).toBuffer();
-    const thumbnail =
-      process.env.NODE_ENV === 'production'
-        ? await uploadFileBufferToS3(thumbBuffer, `thumb-${file.filename}`, file.mimetype, folder)
-        : await saveBufferToLocal(thumbBuffer, `thumb-${file.filename}`, folder);
+    const thumbnail = await saveBufferToLocal(thumbBuffer, `thumb-${file.filename}`, folder);
 
     return { url, thumbnail };
   }
