@@ -1,74 +1,261 @@
-import { MultipartFile } from '@fastify/multipart';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
-import { CreatePostInput, UpdatePostInput } from '@app/schema/post.schema';
+import { PostUpdateInput, PostResponse, PostListResponse, PostSearchQueryInput } from '@app/schema/post.schema';
+import { AppError } from '@app/utils/errors';
+
+import { mapPostToResponse } from './post.mapper';
 
 export class PostService {
   constructor(private readonly prisma: PrismaClient) {}
-  async createPost(userId: string, data: CreatePostInput, files: MultipartFile[]) {
-    return this.prisma.post.create({
-      data: {
-        title: data.title,
-        content: data.content,
-        authorId: userId,
-        categories: {
-          create: data.categoryIds?.map((id) => ({ categoryId: id })) || [],
-        },
-        images: {
-          create: files.map((file) => ({
-            url: `/uploads/${file.filename}`,
-          })),
-        },
+
+  private includePostRelations = {
+    author: {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
       },
+    },
+    categories: {
+      include: {
+        category: true,
+      },
+    },
+    images: true,
+    _count: {
+      select: {
+        comments: true,
+      },
+    },
+  };
+
+  // async create(userId: string, data: PostCreateInput): Promise<PostResponse> {
+  //   const { title, content, status, visibility, categoryIds = [] } = data;
+  //   // Kiểm tra category có tồn tại
+  //   if (categoryIds.length > 0) {
+  //     const existingCategories = await this.prisma.category.findMany({
+  //       where: { id: { in: categoryIds } },
+  //       select: { id: true },
+  //     });
+
+  //     const existingIds = existingCategories.map((c) => c.id);
+  //     const missingIds = categoryIds.filter((id) => !existingIds.includes(id));
+
+  //     if (missingIds.length > 0) {
+  //       throw new AppError(`Category not found: ${missingIds.join(', ')}`, 400);
+  //     }
+  //   }
+
+  //   // Tạo bài viết
+  //   const newPost = await this.prisma.post.create({
+  //     data: {
+  //       title,
+  //       content,
+  //       status,
+  //       visibility,
+  //       authorId: userId,
+  //       categories: {
+  //         create: categoryIds.map((categoryId) => ({
+  //           category: { connect: { id: categoryId } },
+  //         })),
+  //       },
+  //     },
+  //     include: this.includePostRelations,
+  //   });
+
+  //   return mapPostToResponse(newPost);
+  // }
+
+  async createDraft(userId: string) {
+    return await this.prisma.post.create({
+      data: {
+        title: '',
+        content: '',
+        status: 'DRAFT',
+        authorId: userId,
+      },
+      include: this.includePostRelations,
     });
   }
 
-  async updatePost(postId: string, userId: string, data: UpdatePostInput, files: MultipartFile[]) {
-    const post = await this.prisma.post.findUnique({ where: { id: postId } });
-    if (!post || post.authorId !== userId) throw new Error('Unauthorized or post not found');
+  async update(userId: string, postId: string, data: PostUpdateInput): Promise<PostResponse> {
+    const { title, content, status, visibility, categoryIds } = data;
+    const existingPost = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!existingPost) throw new AppError('Post not found', 404);
+    if (existingPost.authorId !== userId) throw new AppError('You do not have permission to update this post', 403);
 
-    // Xóa ảnh cũ nếu có yêu cầu
-    if (data.deletedImageIds?.length) {
-      await this.prisma.postImage.deleteMany({
-        where: {
-          id: { in: data.deletedImageIds },
-          postId,
-        },
+    if (categoryIds) {
+      const existingCategories = await this.prisma.category.findMany({
+        where: { id: { in: categoryIds } },
+        select: { id: true },
       });
+
+      const existingIds = existingCategories.map((c) => c.id);
+      const missingIds = categoryIds.filter((id) => !existingIds.includes(id));
+
+      if (missingIds.length > 0) {
+        throw new AppError(`Category not found: ${missingIds.join(', ')}`, 400);
+      }
+
+      // Cập nhật lại các mối liên kết category
+      await this.prisma.postCategory.deleteMany({ where: { postId } });
+
+      if (categoryIds.length > 0) {
+        await this.prisma.postCategory.createMany({
+          data: categoryIds.map((categoryId) => ({
+            postId,
+            categoryId,
+          })),
+        });
+      }
     }
 
-    return this.prisma.post.update({
+    // Cập nhật nội dung post
+    await this.prisma.post.update({
       where: { id: postId },
       data: {
-        title: data.title,
-        content: data.content,
-        updatedAt: new Date(),
-        images: {
-          create: files.map((file) => ({
-            url: `/uploads/${file.filename}`,
-          })),
-        },
+        title,
+        content,
+        status,
+        visibility,
       },
     });
+
+    // Lấy lại post mới nhất
+    const post = await this.prisma.post.findUniqueOrThrow({
+      where: { id: postId },
+      include: this.includePostRelations,
+    });
+
+    return mapPostToResponse(post);
   }
 
-  async deletePost(postId: string, userId: string) {
-    const post = await this.prisma.post.findUnique({ where: { id: postId } });
-    if (!post || post.authorId !== userId) throw new Error('Unauthorized');
+  async getById(postId: string): Promise<PostResponse> {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: this.includePostRelations,
+    });
 
-    return this.prisma.post.delete({ where: { id: postId } });
+    if (!post) throw new AppError('Post not found', 404);
+    return mapPostToResponse(post);
   }
 
-  async index(query) {
-    const { page = 1, limit = 10, q = '' } = query;
+  async getAll(params: PostSearchQueryInput = {}, currentUserId?: string): Promise<PostListResponse> {
+    const { query, categoryId, authorId, createdFrom, createdTo, page = 1, limit = 10 } = params;
     const skip = (page - 1) * limit;
-    return await this.prisma.post.findMany({
-      where: {
-        OR: [{ title: { contains: q, mode: 'insensitive' } }, { content: { contains: q, mode: 'insensitive' } }],
+
+    // Xây dựng điều kiện tìm kiếm cơ bản
+    const whereClause: Prisma.PostWhereInput = {};
+
+    if (query) {
+      whereClause.OR = [
+        { title: { contains: query, mode: 'insensitive' } },
+        { content: { contains: query, mode: 'insensitive' } },
+      ];
+    }
+
+    if (categoryId) {
+      whereClause.categories = {
+        some: { categoryId },
+      };
+    }
+
+    if (authorId) {
+      whereClause.authorId = authorId;
+    }
+
+    if (createdFrom || createdTo) {
+      whereClause.createdAt = {};
+      if (createdFrom) whereClause.createdAt.gte = new Date(createdFrom);
+      if (createdTo) whereClause.createdAt.lte = new Date(createdTo);
+    }
+
+    // Điều kiện phân quyền
+    const publicVisibleCondition: Prisma.PostWhereInput = {
+      visibility: 'PUBLIC',
+      status: { not: 'DRAFT' }, // Ẩn bài viết DRAFT đối với người không phải tác giả
+    };
+
+    const authorOwnPostsCondition: Prisma.PostWhereInput = currentUserId ? { authorId: currentUserId } : {};
+
+    const conditions: Prisma.PostWhereInput[] = [];
+
+    // Điều kiện tìm kiếm
+    if (whereClause.OR) conditions.push({ OR: whereClause.OR });
+    if (whereClause.categories) conditions.push({ categories: whereClause.categories });
+    if (whereClause.status) conditions.push({ status: whereClause.status });
+    if (whereClause.authorId) conditions.push({ authorId: whereClause.authorId });
+    if (whereClause.createdAt) conditions.push({ createdAt: whereClause.createdAt });
+
+    // Điều kiện phân quyền
+    if (currentUserId) {
+      conditions.push({
+        OR: [publicVisibleCondition, authorOwnPostsCondition],
+      });
+    } else {
+      conditions.push(publicVisibleCondition);
+    }
+
+    const finalWhereClause: Prisma.PostWhereInput = conditions.length > 1 ? { AND: conditions } : conditions[0] || {};
+
+    // Truy vấn DB
+    const [posts, totalCount] = await Promise.all([
+      this.prisma.post.findMany({
+        where: finalWhereClause,
+        skip,
+        take: limit,
+        include: this.includePostRelations,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.post.count({ where: finalWhereClause }),
+    ]);
+
+    return {
+      posts: posts.map((post) => mapPostToResponse(post)),
+      meta: {
+        totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        perPage: limit,
       },
-      skip: Number(skip),
-      take: Number(limit),
-      orderBy: { createdAt: 'desc' },
-    });
+    };
+  }
+
+  async getUserPosts(userId: string, page = 1, perPage = 10): Promise<PostListResponse> {
+    const skip = (page - 1) * perPage;
+
+    const [posts, totalCount] = await Promise.all([
+      this.prisma.post.findMany({
+        where: { authorId: userId },
+        skip,
+        take: perPage,
+        include: this.includePostRelations,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.post.count({ where: { authorId: userId } }),
+    ]);
+
+    return {
+      posts: posts.map((p) => mapPostToResponse(p)),
+      meta: {
+        totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / perPage),
+        perPage,
+      },
+    };
+  }
+
+  async delete(userId: string, postId: string): Promise<{ success: true }> {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new AppError('Post not found', 404);
+    if (post.authorId !== userId) throw new AppError('You do not have permission to delete this post', 403);
+
+    await this.prisma.$transaction([
+      this.prisma.postCategory.deleteMany({ where: { postId } }),
+      this.prisma.post.delete({ where: { id: postId } }),
+    ]);
+    return { success: true };
   }
 }

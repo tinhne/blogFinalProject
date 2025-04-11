@@ -2,7 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
 }
 
 datasource db {
@@ -34,6 +35,7 @@ model User {
   comments      Comment[]
   verifications EmailVerification[]
   refreshTokens RefreshToken[]
+  Media         Media[]
 }
 
 enum Gender {
@@ -98,6 +100,7 @@ model Post {
   comments   Comment[]
   categories PostCategory[]
   images     PostImage[]
+  Media      Media[]
 
   // Full-text search index
   @@index([title, content])
@@ -135,6 +138,28 @@ model PostImage {
 
   // Relations
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model Media {
+  id         String    @id @default(cuid())
+  url        String
+  thumbnail  String?
+  type       MediaType @default(POST)
+  uploadedBy String
+  postId     String? // optional - có thể null nếu chưa gắn vào bài viết
+  alt        String? // mô tả ảnh
+  createdAt  DateTime  @default(now())
+
+  // Relations
+  uploader User  @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  post     Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+enum MediaType {
+  POST
+  AVATAR
+  COVER
+  GALLERY
 }
 
 // Comment model
