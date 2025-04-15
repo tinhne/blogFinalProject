@@ -5,3 +5,4 @@ export * from './media.schema';
 export * from './comment.schema';
 export * from './post.schema';
 export * from './category.schema';
+export * from './comment.schema';

@@ -11,16 +11,11 @@ export class UserService {
   constructor(private readonly prisma: PrismaClient) {}
 
   async update(userId: string, data: UserUpdateInput) {
-    const { firstName, lastName, avatarUrl, dateOfBirth, gender, address } = data;
     try {
-      const updateData: Record<string, any> = {};
-
-      if (firstName !== undefined) updateData.firstName = firstName;
-      if (lastName !== undefined) updateData.lastName = lastName;
-      if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
-      if (dateOfBirth !== undefined) updateData.dateOfBirth = new Date(dateOfBirth);
-      if (gender !== undefined) updateData.gender = gender;
-      if (address !== undefined) updateData.address = address;
+      const updateData: Record<string, any> = {
+        ...data,
+        ...(data.dateOfBirth && { dateOfBirth: new Date(data.dateOfBirth) }),
+      };
 
       const user = await this.prisma.user.update({
         where: { id: userId },
