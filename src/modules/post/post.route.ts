@@ -32,6 +32,24 @@ export default async function blogRoutes(fastify: FastifyInstance) {
     },
     controller.createDraft
   );
+  // Create post
+  // fastify.post(
+  //   '/',
+  //   {
+  //     schema: {
+  //       tags: ['Blog'],
+  //       description: 'Create a new post',
+  //       body: postCreateSchema,
+  //       response: {
+  //         200: postResponseJsonSchema,
+  //         401: errorResponseJsonSchema,
+  //         500: errorResponseJsonSchema,
+  //       },
+  //     },
+  //     onRequest: [fastify.authenticate],
+  //   },
+  //   controller.create
+  // );
   // Update post
   fastify.put(
     '/:id',

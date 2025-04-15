@@ -21,8 +21,6 @@ RUN pnpm exec prisma generate
 
 # Expose cổng mà Fastify sử dụng
 EXPOSE 3000
-EXPOSE 4000
-EXPOSE 5000
 
 # Khởi chạy server
 ENTRYPOINT ["sh", "-c", "pnpm exec prisma migrate deploy && pnpm run dev"]

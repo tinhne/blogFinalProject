@@ -50,7 +50,7 @@ model RefreshToken {
   token     String   @unique
   userAgent String?
   ipAddress String?
-  expiresAt  DateTime // Thêm thời gian hết hạn
+  expiresAt DateTime // Thêm thời gian hết hạn
   revoked   Boolean  @default(false) // Đánh dấu token đã bị thu hồi chưa
   createdAt DateTime @default(now())
 

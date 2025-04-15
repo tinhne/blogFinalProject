@@ -6,7 +6,7 @@ import { successWrapperSchema } from './shared';
 // Schema tạo comment mới
 export const commentCreateSchema = z.object({
   content: z.string().min(1).max(1000),
-  postId: z.string().uuid(),
+  postId: z.string(),
 });
 
 // Schema cập nhật comment
@@ -16,18 +16,18 @@ export const commentUpdateSchema = z.object({
 
 // Schema response cho một comment
 export const commentResponseSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string(),
   content: z.string(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   author: z.object({
-    id: z.string().uuid(),
+    id: z.string(),
     firstName: z.string(),
     lastName: z.string(),
     avatarUrl: z.string().url().optional(),
   }),
   post: z.object({
-    id: z.string().uuid(),
+    id: z.string(),
     title: z.string(),
   }),
 });
