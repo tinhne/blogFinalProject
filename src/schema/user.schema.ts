@@ -4,14 +4,16 @@ import fromZodSchema from 'zod-to-json-schema';
 import { dateOfBirthSchema, passwordSchema, genderEnum, successWrapperSchema } from './shared';
 
 // User update schema
-export const userUpdateSchema = z.object({
-  firstName: z.string().min(1).optional(),
-  lastName: z.string().min(1).optional(),
-  avatarUrl: z.string().url().optional(),
-  dateOfBirth: dateOfBirthSchema,
-  gender: genderEnum.optional(),
-  address: z.string().optional(),
-});
+export const userUpdateSchema = z
+  .object({
+    firstName: z.string().min(1),
+    lastName: z.string().min(1),
+    avatarUrl: z.string().url(),
+    dateOfBirth: dateOfBirthSchema,
+    gender: genderEnum,
+    address: z.string(),
+  })
+  .partial();
 
 // Change password schema
 export const userChangePasswordSchema = z.object({

@@ -22,8 +22,7 @@ export async function saveBufferToLocal(buffer: Buffer, originalFileName: string
   const uploadDir = path.join(__dirname, '../../public', fileName);
   await fs.mkdir(path.dirname(uploadDir), { recursive: true });
   await fs.writeFile(uploadDir, buffer);
-  // return `/public/${fileName}`;
-  const host = env.BASE_URL || 'http://localhost:3000';
+  const host = env.BASE_URL;
 
   return `${host}/public/${fileName}`;
 }

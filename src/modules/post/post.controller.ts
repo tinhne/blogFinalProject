@@ -9,7 +9,7 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   // @binding
-  // async create(request: FastifyRequest<{ Body: PostCreateInput }>, reply: FastifyReply) {
+  // async create(request: FastifyRequest<{ Body: PostUpdateInput }>, reply: FastifyReply) {
   //   const post = await this.postService.create(request.user.id, request.body);
   //   return reply.success(post, 'Post created successfully');
   // }

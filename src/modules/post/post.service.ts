@@ -79,12 +79,72 @@ export class PostService {
     });
   }
 
+  // async update(userId: string, postId: string, data: PostUpdateInput): Promise<PostResponse> {
+  //   const { title, content, status, visibility, categoryIds } = data;
+  //   const existingPost = await this.prisma.post.findUnique({ where: { id: postId } });
+  //   if (!existingPost) throw new AppError('Post not found', 404);
+  //   if (existingPost.authorId !== userId) throw new AppError('You do not have permission to update this post', 403);
+
+  //   if (categoryIds) {
+  //     const existingCategories = await this.prisma.category.findMany({
+  //       where: { id: { in: categoryIds } },
+  //       select: { id: true },
+  //     });
+
+  //     const existingIds = existingCategories.map((c) => c.id);
+  //     const missingIds = categoryIds.filter((id) => !existingIds.includes(id));
+
+  //     if (missingIds.length > 0) {
+  //       throw new AppError(`Category not found: ${missingIds.join(', ')}`, 400);
+  //     }
+
+  //     // Cập nhật lại các mối liên kết category
+  //     await this.prisma.postCategory.deleteMany({ where: { postId } });
+
+  //     if (categoryIds.length > 0) {
+  //       await this.prisma.postCategory.createMany({
+  //         data: categoryIds.map((categoryId) => ({
+  //           postId,
+  //           categoryId,
+  //         })),
+  //       });
+  //     }
+  //   }
+
+  //   // Cập nhật nội dung post
+  //   await this.prisma.post.update({
+  //     where: { id: postId },
+  //     data: {
+  //       title,
+  //       content,
+  //       status,
+  //       visibility,
+  //     },
+  //   });
+
+  //   // Lấy lại post mới nhất
+  //   const post = await this.prisma.post.findUniqueOrThrow({
+  //     where: { id: postId },
+  //     include: this.includePostRelations,
+  //   });
+
+  //   return mapPostToResponse(post);
+  // }
   async update(userId: string, postId: string, data: PostUpdateInput): Promise<PostResponse> {
     const { title, content, status, visibility, categoryIds } = data;
-    const existingPost = await this.prisma.post.findUnique({ where: { id: postId } });
-    if (!existingPost) throw new AppError('Post not found', 404);
-    if (existingPost.authorId !== userId) throw new AppError('You do not have permission to update this post', 403);
 
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new AppError('Post not found', 404);
+    if (post.authorId !== userId) throw new AppError('You do not have permission to update this post', 403);
+
+    // 1. Nếu xuất bản, validate dữ liệu bắt buộc
+    if (status === 'PUBLISHED') {
+      if (!title?.trim() || !content?.trim()) {
+        throw new AppError('Title and content are required to publish', 400);
+      }
+    }
+
+    // 2. Xử lý category nếu có truyền vào
     if (categoryIds) {
       const existingCategories = await this.prisma.category.findMany({
         where: { id: { in: categoryIds } },
@@ -98,37 +158,33 @@ export class PostService {
         throw new AppError(`Category not found: ${missingIds.join(', ')}`, 400);
       }
 
-      // Cập nhật lại các mối liên kết category
+      // Cập nhật lại quan hệ category
       await this.prisma.postCategory.deleteMany({ where: { postId } });
-
-      if (categoryIds.length > 0) {
-        await this.prisma.postCategory.createMany({
-          data: categoryIds.map((categoryId) => ({
-            postId,
-            categoryId,
-          })),
-        });
-      }
+      await this.prisma.postCategory.createMany({
+        data: categoryIds.map((categoryId) => ({
+          postId,
+          categoryId,
+        })),
+      });
     }
 
-    // Cập nhật nội dung post
+    // 3. Cập nhật dữ liệu chính
     await this.prisma.post.update({
       where: { id: postId },
       data: {
         title,
         content,
-        status,
         visibility,
+        status,
       },
     });
 
-    // Lấy lại post mới nhất
-    const post = await this.prisma.post.findUniqueOrThrow({
+    const updatedPost = await this.prisma.post.findUniqueOrThrow({
       where: { id: postId },
       include: this.includePostRelations,
     });
 
-    return mapPostToResponse(post);
+    return mapPostToResponse(updatedPost);
   }
 
   async getById(postId: string): Promise<PostResponse> {

@@ -11,6 +11,13 @@ export const postCreateSchema = z.object({
   visibility: postVisibilityEnum.default('PRIVATE'),
   categoryIds: z.array(z.string()).optional(),
 });
+const createPostSchema = z.object({
+  title: z.string().min(1, { message: 'Title is required' }),
+  content: z.string().min(1, { message: 'Content is required' }),
+  status: z.enum(['DRAFT', 'PUBLISHED']).default('DRAFT'),
+  visibility: z.enum(['PUBLIC', 'PRIVATE']).default('PRIVATE'),
+  categoryIds: z.array(z.string()).optional(),
+});
 
 // Schema cập nhật bài viết
 export const postUpdateSchema = z.object({
@@ -58,7 +65,6 @@ export const postListResponseSchema = z.object({
 export const postSearchQuerySchema = z.object({
   query: z.string().optional(),
   categoryId: z.string().optional(),
-  status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
   authorId: z.string().optional(),
   createdFrom: z.string().datetime().optional(),
   createdTo: z.string().datetime().optional(),
@@ -83,3 +89,4 @@ export type PostUpdateInput = z.infer<typeof postUpdateSchema>;
 export type PostResponse = z.infer<typeof postResponseSchema>;
 export type PostListResponse = z.infer<typeof postListResponseSchema>;
 export type PostSearchQueryInput = z.infer<typeof postSearchQuerySchema>;
+export type PostCreateResponse = z.infer<typeof createPostSchema>;
