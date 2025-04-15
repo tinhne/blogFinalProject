@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyError, FastifyReply, FastifyRequest } from 'fastify';
+import { ZodError } from 'zod';
 
 import { AppError } from '../utils/errors';
 
@@ -10,6 +11,17 @@ export const errorHandler = (fastify: FastifyInstance) => {
         statusCode: error.statusCode,
         error: error.name,
         message: error.message,
+      });
+    }
+
+    if (error instanceof ZodError) {
+      return reply.status(400).send({
+        statusCode: 400,
+        error: 'Validation Error',
+        message: error.errors.map((e) => ({
+          path: e.path.join('.'),
+          message: e.message,
+        })),
       });
     }
 

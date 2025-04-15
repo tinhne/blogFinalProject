@@ -134,12 +134,6 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        isVerified: user.isVerified,
-        isAdmin: user.isAdmin,
-      },
     };
   }
 

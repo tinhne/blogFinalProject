@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 
+import adminRoutes from './admin/admin.route';
 import authRoute from './auth/auth.route';
 import categoryRoutes from './category/category.route';
 import commentRoutes from './comment/comment.route';
@@ -14,4 +15,5 @@ export const registerRoutes = async (app: FastifyInstance) => {
   app.register(postRoutes, { prefix: '/api/post' });
   app.register(categoryRoutes, { prefix: '/api/category' });
   app.register(commentRoutes, { prefix: '/api/comment' });
+  app.register(adminRoutes, { prefix: '/api/admin' });
 };
