@@ -9,7 +9,18 @@ export const commentCreateSchema = z.object({
   postId: z.string(),
 });
 
+const zQueryNumber = z
+  .union([z.string(), z.number()])
+  .transform((val) => (typeof val === 'string' ? parseInt(val, 10) : val))
+  .pipe(z.number().int().min(1));
+
+export const paginationQuerySchema = z.object({
+  page: zQueryNumber.optional().default(1),
+  perPage: zQueryNumber.optional().default(10),
+});
+
 // Schema cập nhật comment
+
 export const commentUpdateSchema = z.object({
   content: z.string().min(1).max(1000),
 });
@@ -39,7 +50,7 @@ export const commentListResponseSchema = z.object({
     totalCount: z.number(),
     currentPage: z.number(),
     totalPages: z.number(),
-    perPage: z.number(),
+    perPage: z.number().min(1),
   }),
 });
 
@@ -52,9 +63,11 @@ export const commentCreateJsonSchema = fromZodSchema(commentCreateSchema, { targ
 export const commentUpdateJsonSchema = fromZodSchema(commentUpdateSchema, { target: 'openApi3' });
 export const commentResponseJsonSchema = fromZodSchema(commentSuccessResponseSchema, { target: 'openApi3' });
 export const commentListResponseJsonSchema = fromZodSchema(commentListSuccessResponseSchema, { target: 'openApi3' });
+export const getUserCommentsQueryJsonSchema = fromZodSchema(paginationQuerySchema, { target: 'openApi3' });
 
 // TypeScript types
 export type CommentCreateInput = z.infer<typeof commentCreateSchema>;
 export type CommentUpdateInput = z.infer<typeof commentUpdateSchema>;
 export type CommentResponse = z.infer<typeof commentResponseSchema>;
 export type CommentListResponse = z.infer<typeof commentListResponseSchema>;
+export type PaginationQuery = z.infer<typeof paginationQuerySchema>;

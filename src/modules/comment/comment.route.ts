@@ -7,6 +7,7 @@ import {
   commentListResponseJsonSchema,
   errorResponseJsonSchema,
   messageResponseJsonSchema,
+  getUserCommentsQueryJsonSchema,
 } from '@app/schema';
 
 import { CommentController } from './comment.controller';
@@ -103,13 +104,7 @@ export default async function commentRoutes(fastify: FastifyInstance) {
       schema: {
         tags: ['Comment'],
         description: 'Get current user comments',
-        querystring: {
-          type: 'object',
-          properties: {
-            page: { type: 'string', default: '1' },
-            perPage: { type: 'string', default: '10' },
-          },
-        },
+        querystring: getUserCommentsQueryJsonSchema,
         response: {
           200: commentListResponseJsonSchema,
           401: errorResponseJsonSchema,
