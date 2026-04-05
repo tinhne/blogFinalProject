@@ -308,10 +308,7 @@ export class PostService {
     if (!post) throw new AppError('Post not found', 404);
     if (post.authorId !== userId) throw new AppError('You do not have permission to delete this post', 403);
 
-    await this.prisma.$transaction([
-      this.prisma.postCategory.deleteMany({ where: { postId } }),
-      this.prisma.post.delete({ where: { id: postId } }),
-    ]);
+    await this.prisma.post.delete({ where: { id: postId } });
     return { success: true };
   }
 }

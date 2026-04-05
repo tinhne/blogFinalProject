@@ -125,7 +125,7 @@ export class AuthService {
       data: {
         userId: user.id,
         token: refreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 30 days
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         userAgent: userAgent || 'unknown',
         ipAddress,
       },

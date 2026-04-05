@@ -3,7 +3,7 @@ import { buildApp } from './app';
 async function server() {
   const app = await buildApp();
   try {
-    console.log('Starting serever...');
+    console.log('Starting server...');
     app.listen({
       port: 3000,
       host: '0.0.0.0',
