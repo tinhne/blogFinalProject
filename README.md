@@ -43,31 +43,34 @@ The project follows a **Module-based Controller-Service** architecture, ensuring
 
 ```mermaid
 erDiagram
-  USER {
-    STRING id PK
-    STRING email UNIQUE
-    STRING name
-    STRING passwordHash
-    STRING avatarUrl
-    DATETIME createdAt
-  }
-  POST {
-    STRING id PK
-    STRING title
-    STRING content
-    BOOLEAN isPublic
-    STRING authorId FK
-    DATETIME createdAt
-  }
-  COMMENT {
-    STRING id PK
-    STRING content
-    STRING postId FK
-    STRING authorId FK
-  }
-  USER ||--o{ POST : "author"
-  USER ||--o{ COMMENT : "writes"
-  POST ||--o{ COMMENT : "has"
+    USER {
+        string id PK
+        string email
+        string firstName
+        string lastName
+        string password
+        string avatarUrl
+        datetime createdAt
+    }
+    POST {
+        string id PK
+        string title
+        string content
+        string status
+        string visibility
+        string authorId FK
+        datetime createdAt
+    }
+    COMMENT {
+        string id PK
+        string content
+        string postId FK
+        string authorId FK
+        datetime createdAt
+    }
+    USER ||--o{ POST : "author"
+    USER ||--o{ COMMENT : "writes"
+    POST ||--o{ COMMENT : "has"
 ```
 
 ---
